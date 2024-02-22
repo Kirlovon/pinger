@@ -1,0 +1,1 @@
+ALTER TABLE urls ADD `timeTaken` integer NOT NULL;
