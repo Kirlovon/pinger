@@ -5,7 +5,7 @@ import { urls } from '$lib/schema';
 import { eq, type InferSelectModel } from 'drizzle-orm';
 
 // Fetch interval
-export const INTERVAL = 1000 * 3;
+export const INTERVAL = 1000 * 10;
 
 // Events emitter
 export const LISTENERS = new Set<EventEmitter>();

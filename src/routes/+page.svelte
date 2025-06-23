@@ -48,40 +48,40 @@
 			{/if}
 		</div>
 
-		<div class="border border-stone-200 rounded-md bg-white">
-			{#each data?.urls as url}
-				<form method="POST" action="?/delete" class="relative block group/url [&:not(:last-child)]:border-b" use:enhance>
-					<div class="flex items-center gap-2 max-w-full overflow-hidden px-4 py-3">
-						<input name="id" type="hidden" value={url.id} readonly />
-						<div
-							class="whitespace-nowrap overflow-hidden text-ellipsis duration-500"
-							class:text-stone-300={fetchingUrlsIDs.has(url.id)}
-							class:transition-colors={!fetchingUrlsIDs.has(url.id)}
-						>
-							{url.url}
-						</div>
-						{#if url.timeTaken}
-							<span class="italic text-xs text-stone-400 text-nowrap">({url.timeTaken} ms)</span>
-						{/if}
+		{#if data?.urls?.length}
+			<div class="border border-stone-200 rounded-md bg-white">
+				{#each data?.urls as url}
+					<form method="POST" action="?/delete" class="relative block group/url [&:not(:last-child)]:border-b" use:enhance>
+						<div class="flex items-center gap-2 max-w-full overflow-hidden px-4 py-3">
+							<input name="id" type="hidden" value={url.id} readonly />
+							<div
+								class="whitespace-nowrap overflow-hidden text-ellipsis duration-500"
+								class:text-stone-300={fetchingUrlsIDs.has(url.id)}
+								class:transition-colors={!fetchingUrlsIDs.has(url.id)}
+							>
+								{url.url}
+							</div>
+							{#if url.timeTaken}
+								<span class="italic text-xs text-stone-400 text-nowrap">({url.timeTaken} ms)</span>
+							{/if}
 
-						<button
-							type="submit"
-							class="block ml-auto opacity-0 translate-y-1 transition-all group-hover/url:translate-y-0 group-hover/url:opacity-100 hover:opacity-75"
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4">
-								<path
-									fill-rule="evenodd"
-									d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.711Z"
-									clip-rule="evenodd"
-								/>
-							</svg>
-						</button>
-					</div>
-				</form>
-			{:else}
-				<span class="block px-4 py-3 text-stone-400 italic">No URLS</span>
-			{/each}
-		</div>
+							<button
+								type="submit"
+								class="block ml-auto opacity-0 translate-y-1 transition-all group-hover/url:translate-y-0 group-hover/url:opacity-100 hover:opacity-75"
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4">
+									<path
+										fill-rule="evenodd"
+										d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.711Z"
+										clip-rule="evenodd"
+									/>
+								</svg>
+							</button>
+						</div>
+					</form>
+				{/each}
+			</div>
+		{/if}
 
 		<form method="POST" action="?/add" use:enhance>
 			<!-- svelte-ignore a11y-no-redundant-roles -->
