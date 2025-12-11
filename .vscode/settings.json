@@ -1,5 +1,8 @@
 {
-    "cSpell.words": [
-        "signale"
-    ]
+	"files.associations": {
+		"*.css": "tailwindcss"
+	},
+	"cSpell.words": [
+		"signale"
+	]
 }

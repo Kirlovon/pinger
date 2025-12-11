@@ -1,32 +1,46 @@
-import type { RequestHandler } from '../$types';
-import { LISTENERS } from '$lib/services/pinger';
-import { EventEmitter } from 'node:events';
+import type { RequestHandler } from '@sveltejs/kit';
+import { addClient, removeClient } from '$lib/server/events';
 
 export const GET: RequestHandler = async () => {
-    const ee = new EventEmitter();
-    LISTENERS.add(ee);
+	const stream = new ReadableStream({
+		start(controller) {
+			const encoder = new TextEncoder();
 
-    const stream = new ReadableStream({
-        start(controller) {
-            ee.on('request_start', (url) => {
-                controller.enqueue(`event:request_start\ndata:${JSON.stringify(url)}\n\n`);
-            });
+			// Add client to the set
+			addClient(controller);
 
-            ee.on('request_end', (url) => {
-                controller.enqueue(`event:request_end\ndata:${JSON.stringify(url)}\n\n`);
-            });
-        },
+			// Send initial connection message
+			controller.enqueue(
+				encoder.encode(`data: ${JSON.stringify({ type: 'connected', timestamp: Date.now() })}\n\n`)
+			);
 
-        cancel() {
-            LISTENERS.delete(ee);
-        }
-    })
+			// Send periodic updates
+			const interval = setInterval(() => {
+				const message = {
+					type: 'ping',
+					timestamp: Date.now()
+				};
+				try {
+					controller.enqueue(encoder.encode(`data: ${JSON.stringify(message)}\n\n`));
+				} catch (error) {
+					clearInterval(interval);
+					removeClient(controller);
+				}
+			}, 1000);
 
-    return new Response(stream, {
-        headers: {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive'
-        }
-    });
+			// Cleanup on close
+			return () => {
+				clearInterval(interval);
+				removeClient(controller);
+			};
+		}
+	});
+
+	return new Response(stream, {
+		headers: {
+			'Content-Type': 'text/event-stream',
+			'Cache-Control': 'no-cache',
+			'Connection': 'keep-alive'
+		}
+	});
 };

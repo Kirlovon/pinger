@@ -1,38 +1,83 @@
 <script lang="ts">
-	import '../app.css';
+	import type { PageData } from './$types';
+	import { slide, fade, scale } from 'svelte/transition';
+	import Clock from '$lib/components/Clock.svelte';
+	import TrashIcon from '$lib/components/TrashIcon.svelte';
+	import { createUrlSchema } from '$lib/schema';
+	import { invalidateAll } from '$app/navigation';
+	import { getStatusColor } from '$lib/utils';
 
-	import type { ActionData, PageData } from './$types';
-	import { enhance } from '$app/forms';
-	import Clock from '../components/Clock.svelte';
-	import { onMount } from 'svelte';
+	const { data }: { data: PageData } = $props();
 
-	export let data: PageData;
-	export let form: ActionData;
-	export let fetchingUrlsIDs = new Set<string>();
+	let errorMessage = $state<string | null>(null);
+	let newUrlInput = $state('');
+	let isLoading = $state(false);
 
-	onMount(() => {
-		const evtSource = new EventSource('/api/events');
-
-		const requestStart = (event: MessageEvent) => {
-			const data = JSON.parse(event.data);
-			fetchingUrlsIDs.add(data.id);
-		};
-
-		const requestEnd = (event: MessageEvent) => {
-			const data = JSON.parse(event.data);
-			fetchingUrlsIDs.delete(data.id);
-			fetchingUrlsIDs = fetchingUrlsIDs;
-		};
-
-		evtSource.addEventListener('request_start', requestStart);
-		evtSource.addEventListener('request_end', requestEnd);
-
-		return () => {
-			evtSource.removeEventListener('request_start', requestStart);
-			evtSource.removeEventListener('request_end', requestEnd);
-			evtSource.close();
-		};
+	// Clear error message on new input
+	$effect(() => {
+		newUrlInput;
+		errorMessage = null;
 	});
+	
+	/**
+	 * Handle adding a new URL
+	 */
+	async function handleAddUrl(value: string) {
+		if (value.trim() === '') return;
+		errorMessage = null;
+
+		try {
+			const result = createUrlSchema.safeParse({ url: value });
+			if (result.error) {
+				errorMessage = result.error.issues[0].message;
+				return;
+			}
+
+			const response = await fetch('/api/urls', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(result.data),
+			});
+
+			if (!response.ok) {
+				const resData = await response.json();
+				console.log(resData)
+				errorMessage = resData?.message || 'Failed to add URL. Please try again.';
+				return;
+			}
+
+			newUrlInput = '';
+			await invalidateAll();
+		} catch (error) {
+			errorMessage = 'An unexpected error occurred. Please try again.';
+			return;
+		}
+	}
+
+	/**
+	 * Handle deleting a URL
+	 * @param id ID of the URL instance to delete. (UUIDv4)
+	 */
+	async function handleDeleteUrl(id: string) {
+		try {
+			const response = await fetch(`/api/urls`, {
+				method: 'DELETE',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ id }),
+			});
+
+			if (!response.ok) {
+				const resData = await response.json();
+				errorMessage = resData?.message || 'Failed to delete URL. Please try again.';
+				return;
+			}
+
+			await invalidateAll();
+		} catch (error) {
+			errorMessage = 'An unexpected error occurred. Please try again.';
+			return;
+		}
+	}
 </script>
 
 <div class="flex min-h-svh justify-center py-32">
@@ -41,74 +86,80 @@
 			<h1 class="text-xl font-black pb-1 font-serif mb-1">pinger.</h1>
 			<p class="max-w-lg">This service will send GET requests to the specified URLs on a minute-by-minute basis.</p>
 
-			{#if data?.urls?.length}
-				<div class="absolute right-2 top-2">
-					<Clock interval={data.interval} lastFetchDate={data.lastFetchDate} />
+			{#if data.urls?.length && data.lastPingDate}
+				<div class="absolute right-2 top-2" transition:scale>
+					<Clock interval={data.pingInterval} lastPingDate={data.lastPingDate} />
 				</div>
 			{/if}
 		</div>
 
-		{#if data?.urls?.length}
-			<div class="border border-stone-200 rounded-md bg-white">
-				{#each data?.urls as url}
-					<form method="POST" action="?/delete" class="relative block group/url [&:not(:last-child)]:border-b" use:enhance>
-						<div class="flex items-center gap-2 max-w-full overflow-hidden px-4 py-3">
-							<input name="id" type="hidden" value={url.id} readonly />
-							<div
-								class="whitespace-nowrap overflow-hidden text-ellipsis duration-500"
-								class:text-stone-300={fetchingUrlsIDs.has(url.id)}
-								class:transition-colors={!fetchingUrlsIDs.has(url.id)}
-							>
-								{url.url}
-							</div>
-							{#if url.timeTaken}
-								<span class="italic text-xs text-stone-400 text-nowrap">({url.timeTaken} ms)</span>
-							{/if}
-
-							<button
-								type="submit"
-								class="block ml-auto opacity-0 translate-y-1 transition-all group-hover/url:translate-y-0 group-hover/url:opacity-100 hover:opacity-75"
-							>
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4">
-									<path
-										fill-rule="evenodd"
-										d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.711Z"
-										clip-rule="evenodd"
-									/>
-								</svg>
-							</button>
+		<div class="border border-stone-300 rounded-md bg-white overflow-hidden" class:border-none={data.urls?.length === 0}>
+			{#each data.urls as url, index (url.id)}
+				<div class="relative block group/url not-last:border-b border-stone-300" transition:slide={{ duration: 200 }}>
+					<div class="relative flex justify-between items-center gap-2 max-w-full overflow-hidden px-4 py-3">
+						<div class="whitespace-nowrap overflow-hidden text-ellipsis duration-500">
+							{url?.url}
 						</div>
-					</form>
-				{/each}
-			</div>
-		{/if}
 
-		<form method="POST" action="?/add" use:enhance>
-			<!-- svelte-ignore a11y-no-redundant-roles -->
-			<fieldset
-				role="group"
-				class="border border-stone-200 flex bg-white overflow-hidden rounded-md focus-within:border-stone-400"
-				class:border-red-500={form?.error}
+						{#if url.lastPing}
+							{#key url.lastPing.createdAt.getTime()}
+								<div
+									class="flex gap-2 items-center text-xs text-stone-400 transition-all text-nowrap group-hover/url:-translate-y-1 group-hover/url:opacity-0"
+									in:fade={{ duration: 500, delay: index * 50 }}
+								>
+									<span>Response: {url.lastPing?.responseTime} ms</span>
+									<span class="{getStatusColor(url.lastPing.status)} text-white/90 px-1.5 py-0.5 rounded-md border-black/10 border"
+										>{url.lastPing.status}</span
+									>
+								</div>
+							{/key}
+						{/if}
+
+						<button
+							onclick={() => handleDeleteUrl(url.id)}
+							class="absolute right-4 block opacity-0 translate-y-1 transition-all group-hover/url:translate-y-0 group-hover/url:opacity-100 hover:opacity-75 cursor-pointer"
+						>
+							<TrashIcon />
+						</button>
+					</div>
+				</div>
+			{/each}
+		</div>
+
+		<div
+			role="group"
+			class="border flex bg-white overflow-hidden rounded-md leading-6 {errorMessage ? 'border-red-500 **:border-red-500' : (
+				'border-stone-300 focus-within:border-stone-400 focus-within:**:border-stone-400'
+			)}"
+		>
+			<input
+				type="text"
+				id="url"
+				name="url"
+				disabled={isLoading}
+				bind:value={newUrlInput}
+				onkeydown={(e) => e.key === 'Enter' && handleAddUrl(newUrlInput)}
+				placeholder="URL to ping every minute"
+				class="px-4 py-3 w-full border-none focus:outline-none placeholder:text-stone-400"
+			/>
+
+			<button
+				onclick={() => handleAddUrl(newUrlInput)}
+				class="px-6 py-3 border-l border-stone-300 whitespace-nowrap font-medium cursor-pointer"
 			>
-				<input
-					type="text"
-					id="url"
-					name="url"
-					value={form?.url ?? ''}
-					placeholder="URL to ping every minute"
-					aria-invalid={form?.error ? 'true' : null}
-					class="px-4 py-3 w-full border-none focus:outline-none placeholder:text-stone-400"
-					required
-				/>
+				Add URL
+			</button>
+		</div>
 
-				<input type="submit" value="Add URL" class="px-6 py-3 border-l text-stone-800 font-medium" />
-			</fieldset>
-
-			{#if form?.error}
-				<span class="block text-sm text-red-400 px-4 py-2">{form?.error}</span>
+		<div class="flex flex-col">
+			{#if errorMessage}
+				<span class="text-xs text-red-500 px-4 m-0" transition:slide={{ duration: 200 }}>Error: {errorMessage}</span>
+			{:else}
+				<span class="text-xs text-stone-400 px-4" transition:slide={{ duration: 200 }}>
+					Made with ♥︎ by
+					<a href="https://github.com/Kirlovon" target="_blank" class="hover:underline hover:text-stone-600">Kirlovon</a>
+				</span>
 			{/if}
-		</form>
-
-		<span class="text-xs text-stone-400 pl-4">Made with ♥︎ by Kirlovon</span>
+		</div>
 	</main>
 </div>

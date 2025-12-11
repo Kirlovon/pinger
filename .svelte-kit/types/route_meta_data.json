@@ -4,5 +4,8 @@
 	],
 	"/api/events": [
 		"src/routes/api/events/+server.ts"
+	],
+	"/api/urls": [
+		"src/routes/api/urls/+server.ts"
 	]
 }

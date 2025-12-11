@@ -1,9 +1,14 @@
-export function validURL(str: string) {
-    const pattern = new RegExp('^(https?:\\/\\/)?' + // protocol
-        '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
-        '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
-        '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
-        '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
-        '(\\#[-a-z\\d_]*)?$', 'i'); // fragment locator
-    return pattern.test(str);
+/**
+ * Returns a Tailwind color code based on the provided HTTP status code.
+ * @param status - The HTTP status code.
+ * @returns A string representing the Tailwind color code.
+ */
+export function getStatusColor(status: number): string {
+    const firstDigit = Math.floor(status / 100);
+
+    if (firstDigit === 2) return 'bg-lime-500';
+    if (firstDigit === 3) return 'bg-cyan-500';
+    if (firstDigit === 4) return 'bg-amber-500';
+    if (firstDigit === 5) return 'bg-red-500';
+    return 'bg-gray-500';
 }
