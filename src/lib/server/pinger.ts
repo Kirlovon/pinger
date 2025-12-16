@@ -1,15 +1,19 @@
+import pLimit from 'p-limit';
 import signale from 'signale';
 import { sendRequest } from '$lib/utils';
 import { PING_INTERVAL, REQUEST_TIMEOUT } from '$lib/config';
 import { prisma, type Url } from './prisma.ts';
 
-// Last ping time
-export let lastPingAt: Date | null = null;
-
 // Define global interval variable, for sending pings
 declare namespace globalThis {
 	let interval: ReturnType<typeof setInterval>;
 }
+
+// Max 10 concurrent requests
+const limit = pLimit(10); 
+
+// Last ping time
+export let lastPingAt: Date | null = null;
 
 /**
  * Setup sending interval
@@ -27,9 +31,9 @@ async function pingUrls() {
 		const urls = await prisma.url.findMany();
 		lastPingAt = new Date();
 
-		const promises = [];
-		for (const url of urls) promises.push(pingUrl(url));
+		const promises = urls.map(url => limit(() => pingUrl(url)));
 		await Promise.all(promises);
+		
 	} catch (error) {
 		signale.error(error);
 	}
