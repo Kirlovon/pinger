@@ -1,5 +1,5 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import { addClient, removeClient } from '$lib/server/events';
+import { addClient, removeClient, type ServerEventConnected, type ServerEventPing } from '$lib/server/events';
 
 export const GET: RequestHandler = async () => {
 	const stream = new ReadableStream({
@@ -10,17 +10,13 @@ export const GET: RequestHandler = async () => {
 			addClient(controller);
 
 			// Send initial connection message
-			controller.enqueue(
-				encoder.encode(`data: ${JSON.stringify({ type: 'connected', timestamp: Date.now() })}\n\n`)
-			);
+			const message: ServerEventConnected = { type: 'connected', timestamp: Date.now() };
+			controller.enqueue(encoder.encode(`data: ${JSON.stringify(message)}\n\n`));
 
 			// Send periodic updates
 			const interval = setInterval(() => {
-				const message = {
-					type: 'ping',
-					timestamp: Date.now()
-				};
 				try {
+					const message: ServerEventPing = { type: 'ping', timestamp: Date.now()};
 					controller.enqueue(encoder.encode(`data: ${JSON.stringify(message)}\n\n`));
 				} catch (error) {
 					clearInterval(interval);

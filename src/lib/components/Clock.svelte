@@ -15,7 +15,7 @@
 
 		if (newPercent > 100) {
 			if (browser) invalidateAll();
-			lastPingDate = new Date();
+			// lastPingDate = new Date();
 			return newPercent - 100;
 		}
 

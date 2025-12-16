@@ -1,5 +1,6 @@
 import signale from 'signale';
-import { PING_INTERVAL } from '$lib/config';
+import { sendRequest } from '$lib/utils';
+import { PING_INTERVAL, REQUEST_TIMEOUT } from '$lib/config';
 import { prisma, type Url } from './prisma.ts';
 
 // Last ping time
@@ -15,73 +16,52 @@ declare namespace globalThis {
  */
 export function setupInterval() {
 	clearInterval(globalThis.interval);
-	globalThis.interval = setInterval(() => sendPingRequests(), PING_INTERVAL);
+	globalThis.interval = setInterval(() => pingUrls(), PING_INTERVAL);
 }
 
 /**
- * Send request
+ * Send ping requests to all URLs in the database.
  */
-async function sendPingRequests() {
-    try {
-        const urls = await prisma.url.findMany();
-    
-        const promises = [];
-        for (const url of urls) promises.push(sendRequest(url));    
-        await Promise.all(promises);
+async function pingUrls() {
+	try {
+		const urls = await prisma.url.findMany();
+		lastPingAt = new Date();
 
-        signale.info(`${promises.length} ping requests sent!`);
-
-    } finally {
-        lastPingAt = new Date();
-    }
+		const promises = [];
+		for (const url of urls) promises.push(pingUrl(url));
+		await Promise.all(promises);
+	} catch (error) {
+		signale.error(error);
+	}
 }
 
-export async function sendRequest(url: Url) {
-    let response: Response | undefined = undefined;
-    const startTime = new Date();
+/**
+ * Send a ping request to the given URL and log the result.
+ * @param url - The URL object containing the URL to ping.
+ */
+async function pingUrl(url: Url, timeout: number = REQUEST_TIMEOUT) {
+	const response = await sendRequest(url.url, timeout);
 
-    try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 500); // 500 ms timeout
-
-        response = await fetch(url.url, { signal: controller.signal });
-        clearTimeout(timeoutId);
-    } catch (error) {
-        if (error instanceof Error && error.name === 'AbortError') {
-            signale.error(`Request to "${url.url}" timed out`);
-        } else {
-            signale.error(`Request to "${url.url}" failed`);
-        }
-    }
-
-    const endTime = new Date();
-    const timeTaken = endTime.getTime() - startTime.getTime();
-    
-    // Log
-    if (response?.ok) {
-        signale.success(`Requests sent to "${url.url}" with status ${response?.status} (took ${timeTaken} ms)`);
-    } else {
-        signale.warn(`Requests sent to "${url.url}" with status ${response?.status} (took ${timeTaken} ms)`);
-    }
-
-    // Save ping request
-    if (response) {
-        await prisma.pingRequest.upsert({
-            where: { urlId: url.id },
-            update: {
-                status: response.status,
-                responseTime: timeTaken,
-                createdAt: new Date(),
-            },
-            create: {
-                id: crypto.randomUUID(),
-                urlId: url.id,
-                status: response.status,
-                responseTime: timeTaken,
-            },
-        });
-    }
+	if (!response.success) {
+		signale.warn(`Ping to ${url.url} failed: ${response.error}`);
+		return;
+	}
+	
+	signale.success(`Ping to ${url.url} succeeded: ${response.status} in ${response.responseTime}ms`);
+	
+	// Save ping request
+	await prisma.pingRequest.upsert({
+		where: { urlId: url.id },
+		update: {
+			status: response.status,
+			responseTime: response.responseTime,
+			createdAt: new Date(),
+		},
+		create: {
+			id: crypto.randomUUID(),
+			urlId: url.id,
+			status: response.status,
+			responseTime: response.responseTime,
+		},
+	});
 }
-
-
-

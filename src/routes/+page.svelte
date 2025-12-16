@@ -6,6 +6,7 @@
 	import { createUrlSchema } from '$lib/schema';
 	import { invalidateAll } from '$app/navigation';
 	import { getStatusColor } from '$lib/utils';
+	import { createSSEClient } from '$lib/sseClient';
 
 	const { data }: { data: PageData } = $props();
 

@@ -29,6 +29,7 @@ declare module '$env/static/private' {
 	export const DATABASE_URL: string;
 	export const ACCESS_USERNAME: string;
 	export const ACCESS_PASSWORD: string;
+	export const REDIS_URL: string;
 	export const NVM_INC: string;
 	export const SPACESHIP_VERSION: string;
 	export const npm_config_legacy_peer_deps: string;
@@ -43,7 +44,6 @@ declare module '$env/static/private' {
 	export const npm_config_global_prefix: string;
 	export const TERM_PROGRAM_VERSION: string;
 	export const FIG_NEW_SESSION: string;
-	export const ORIGINAL_XDG_CURRENT_DESKTOP: string;
 	export const MallocNanoZone: string;
 	export const COLOR: string;
 	export const npm_config_noproxy: string;
@@ -131,6 +131,7 @@ declare module '$env/dynamic/private' {
 		DATABASE_URL: string;
 		ACCESS_USERNAME: string;
 		ACCESS_PASSWORD: string;
+		REDIS_URL: string;
 		NVM_INC: string;
 		SPACESHIP_VERSION: string;
 		npm_config_legacy_peer_deps: string;
@@ -145,7 +146,6 @@ declare module '$env/dynamic/private' {
 		npm_config_global_prefix: string;
 		TERM_PROGRAM_VERSION: string;
 		FIG_NEW_SESSION: string;
-		ORIGINAL_XDG_CURRENT_DESKTOP: string;
 		MallocNanoZone: string;
 		COLOR: string;
 		npm_config_noproxy: string;

@@ -1,9 +1,41 @@
 // Store all active connections
 const clients = new Set<ReadableStreamDefaultController>();
 
-// Function to emit events to all connected clients
-export function emitEvent(event: string, data: any) {
-	const message = `data: ${JSON.stringify({ event, data, timestamp: Date.now() })}\n\n`;
+// Structure of connected event
+export interface ServerEventConnected {
+	type: 'connected';
+	timestamp: number;
+}
+
+// Structure of ping event
+export interface ServerEventPing {
+	type: 'ping';
+	timestamp: number;
+}
+
+// Structure of general data event
+export interface ServerEventData {
+	type: 'data';
+	timestamp: number;
+	data: Record<string, any>;
+}
+
+// Union type for all events
+export type ServerEvent = ServerEventConnected | ServerEventPing | ServerEventData;
+
+/**
+ * Emits an event to all connected clients.
+ * @param type - The type of the event.
+ * @param data - The data associated with the event.
+ */
+export function emitEvent(data: ServerEventData['data']) {
+	const payload: ServerEventData = {
+		type: 'data',
+		timestamp: Date.now(),
+		data
+	};
+
+	const message = `data: ${JSON.stringify(payload)}\n\n`;
 	const encoder = new TextEncoder();
 	const encoded = encoder.encode(message);
 
@@ -11,23 +43,31 @@ export function emitEvent(event: string, data: any) {
 		try {
 			controller.enqueue(encoded);
 		} catch (error) {
-			// Remove client if sending fails
-			clients.delete(controller);
+			clients.delete(controller); // Remove client if sending fails
 		}
 	});
 }
 
-// Add a client connection
+/**
+ * Adds a new client connection to the set of active clients.
+ * @param controller - The ReadableStreamDefaultController for the client connection.
+ */
 export function addClient(controller: ReadableStreamDefaultController) {
 	clients.add(controller);
 }
 
-// Remove a client connection
+/**
+ * Removes a client connection from the set of active clients.
+ * @param controller - The ReadableStreamDefaultController for the client connection.
+ */
 export function removeClient(controller: ReadableStreamDefaultController) {
 	clients.delete(controller);
 }
 
-// Get the number of active connections
+/**
+ * Returns the current number of connected clients.
+ * @returns The number of connected clients.
+ */
 export function getClientCount() {
 	return clients.size;
 }
