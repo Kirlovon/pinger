@@ -4,6 +4,7 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
+		"start": "node build/index.js",
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
@@ -28,6 +29,7 @@
 	"dependencies": {
 		"@prisma/adapter-better-sqlite3": "^7.1.0",
 		"@prisma/client": "^7.1.0",
+		"nanoid": "^5.1.6",
 		"p-limit": "^7.2.0",
 		"signale": "^1.4.0",
 		"zod": "^4.1.13"

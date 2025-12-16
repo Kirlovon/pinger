@@ -57,7 +57,7 @@
 
 	/**
 	 * Handle deleting a URL
-	 * @param id ID of the URL instance to delete. (UUIDv4)
+	 * @param id ID of the URL instance to delete. (NanoId)
 	 */
 	async function handleDeleteUrl(id: string) {
 		try {

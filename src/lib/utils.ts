@@ -1,5 +1,3 @@
-import { success } from 'zod';
-
 /**
  * Returns a Tailwind color code based on the provided HTTP status code.
  * @param status - The HTTP status code.

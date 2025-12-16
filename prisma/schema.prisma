@@ -14,7 +14,7 @@ datasource db {
 }
 
 model Url {
-  id           String        @id @default(uuid())
+  id           String        @id @default(nanoid())
   url          String        
   createdAt    DateTime      @default(now())
 
@@ -23,7 +23,7 @@ model Url {
 }
 
 model PingRequest {
-  id           String   @id @default(uuid())
+  id           String   @id @default(nanoid())
   urlId        String   @unique
   status       Int
   createdAt    DateTime @default(now())

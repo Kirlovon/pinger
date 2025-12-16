@@ -3,40 +3,49 @@ import signale from 'signale';
 import { sendRequest } from '$lib/utils';
 import { PING_INTERVAL, REQUEST_TIMEOUT } from '$lib/config';
 import { prisma, type Url } from './prisma.ts';
-
-// Define global interval variable, for sending pings
-declare namespace globalThis {
-	let interval: ReturnType<typeof setInterval>;
-}
+import { nanoid } from 'nanoid';
 
 // Max 10 concurrent requests
 const limit = pLimit(10); 
 
-// Last ping time
+// Interval handler
+export let interval: ReturnType<typeof setInterval> | null = null;
 export let lastPingAt: Date | null = null;
+export let nextPingAt: Date = getNextPingTime();
 
 /**
  * Setup sending interval
  */
 export function setupInterval() {
-	clearInterval(globalThis.interval);
-	globalThis.interval = setInterval(() => pingUrls(), PING_INTERVAL);
+	if (interval) clearInterval(interval);
+	interval = setInterval(() => pingUrls(), PING_INTERVAL);
+	nextPingAt = getNextPingTime();
+}
+
+/**
+ * Get the next scheduled ping time
+ */
+function getNextPingTime(): Date {
+    return new Date(Date.now() + PING_INTERVAL);
 }
 
 /**
  * Send ping requests to all URLs in the database.
  */
 async function pingUrls() {
+	
 	try {
 		const urls = await prisma.url.findMany();
+		
 		lastPingAt = new Date();
-
 		const promises = urls.map(url => limit(() => pingUrl(url)));
 		await Promise.all(promises);
-		
+		nextPingAt = getNextPingTime();
+
 	} catch (error) {
 		signale.error(error);
 	}
+
 }
 
 /**
@@ -62,7 +71,7 @@ async function pingUrl(url: Url, timeout: number = REQUEST_TIMEOUT) {
 			createdAt: new Date(),
 		},
 		create: {
-			id: crypto.randomUUID(),
+			id: nanoid(),
 			urlId: url.id,
 			status: response.status,
 			responseTime: response.responseTime,

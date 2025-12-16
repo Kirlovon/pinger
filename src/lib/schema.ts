@@ -1,3 +1,4 @@
+import { nanoid } from 'nanoid';
 import { z } from 'zod';
 
 /**
@@ -5,7 +6,7 @@ import { z } from 'zod';
  */
 export const createUrlSchema = z.object({
     url: z.url('Invalid URL format'),
-    id: z.uuid().default(() => crypto.randomUUID()),
+    id: z.nanoid().default(() => nanoid()),
     createdAt: z.coerce.date().optional()
 });
 
@@ -13,7 +14,7 @@ export const createUrlSchema = z.object({
  * Schema for deleting a URL by ID
  */
 export const deleteUrlSchema = z.object({
-    id: z.uuid()
+    id: z.nanoid()
 });
 
 export type CreateUrlInput = z.infer<typeof createUrlSchema>;
