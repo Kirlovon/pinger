@@ -1,38 +1,74 @@
-# sv
+![Pinger Logo](./static/preview.webp)
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+# Pinger
 
-## Creating a project
+A lightweight SvelteKit application that monitors URLs by periodically pinging them and tracking their response times and status codes in real-time.
 
-If you're seeing this, you've probably already done this step. Congrats!
+## Features
+
+- **Automated Monitoring**: Pings all registered URLs every 5 seconds
+- **Response Tracking**: Records status codes and response times
+- **Real-time Updates**: Live dashboard with server-sent events
+- **SQLite Storage**: Persistent data using Prisma ORM
+- **Optional Auth**: HTTP Basic Authentication support
+- **Modern Stack**: Built with SvelteKit 2, Svelte 5 (runes), and Tailwind CSS 4
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js 18+ 
+- npm/pnpm/yarn
+
+### Installation
 
 ```sh
-# create a new project in the current directory
-npx sv create
+# Install dependencies
+npm install
 
-# create a new project in my-app
-npx sv create my-app
-```
+# Initialize database
+npx prisma migrate dev
 
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
+# Start development server
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Building
+Visit `http://localhost:5173` to access the application.
 
-To create a production version of your app:
+## Configuration
+
+### Environment Variables
+
+Create a `.env` file in the project root (optional):
+
+```env
+# SQLite Database URL
+DATABASE_URL="file:./data.db"
+
+# Optional HTTP Basic Authentication
+ACCESS_USERNAME=admin
+ACCESS_PASSWORD=secret
+```
+
+### Ping Interval
+
+Modify the ping interval in `src/lib/config.ts`:
+
+```typescript
+export const PING_INTERVAL = 5000; // milliseconds
+```
+
+## Development
 
 ```sh
-npm run build
+npm run dev              # Start dev server
+npm run build            # Production build
+npm run preview          # Preview production build
+npm test                 # Run tests
+npx prisma studio        # Visual database browser
+npx prisma migrate dev   # Create database migrations
 ```
 
-You can preview the production build with `npm run preview`.
+## License
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+MIT
