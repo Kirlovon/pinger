@@ -11,7 +11,9 @@ export const load: PageServerLoad = async () => {
 
     return {
         urls,
-        lastPingAt: lastPingAt?.getTime() ?? null,
-        nextPingAt: nextPingAt.getTime()
+        intervalStatus: {
+            lastPingAt: lastPingAt?.getTime() ?? null,
+            nextPingAt: nextPingAt.getTime()
+        }
     };
 };

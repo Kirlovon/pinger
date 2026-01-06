@@ -2,7 +2,7 @@
 	import type { PageData } from '../../routes/$types';
 	import type { ServerEventUrlPinged, ServerEventIntervalStatus } from '$lib/server/events';
 	import { scale } from 'svelte/transition';
-	import { invalidateAll } from '$app/navigation';
+	import { invalidate, invalidateAll } from '$app/navigation';
 	import Clock from '$lib/components/Clock.svelte';
 	import UrlList from '$lib/components/UrlList.svelte';
 	import UrlInput from '$lib/components/UrlInput.svelte';
@@ -15,9 +15,9 @@
 	let urls = $state(data.urls);
 
 	// svelte-ignore state_referenced_locally
-	let intervalStatus = $state<{ lastPingAt: number | null; nextPingAt: number } | null>({
-		lastPingAt: data.lastPingAt,
-		nextPingAt: data.nextPingAt
+	let intervalStatus = $state<PageData['intervalStatus'] | null>({
+		lastPingAt: data.intervalStatus.lastPingAt,
+		nextPingAt: data.intervalStatus.nextPingAt
 	});
 
 	let errorMessage = $state<string | null>(null);
@@ -64,7 +64,7 @@
 						lastPingAt: statusEvent.lastPingAt,
 						nextPingAt: statusEvent.nextPingAt
 					};
-					
+
 					break;
 				}
 			}
