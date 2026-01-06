@@ -6,11 +6,15 @@ import { prisma, type Url } from './prisma.ts';
 import { nanoid } from 'nanoid';
 import { emitEvent } from './events';
 
+// Extend globalThis to include interval
+declare global {
+	var pingerInterval: ReturnType<typeof setInterval> | null;
+}
+
 // Max 10 concurrent requests
 const limit = pLimit(10); 
 
-// Interval handler
-export let interval: ReturnType<typeof setInterval> | null = null;
+// Interval handler stored in global context to persist across HMR
 export let lastPingAt: Date | null = null;
 export let nextPingAt: Date = getNextPingTime();
 
@@ -18,9 +22,15 @@ export let nextPingAt: Date = getNextPingTime();
  * Setup sending interval
  */
 export function setupInterval() {
-	if (interval) clearInterval(interval);
-	interval = setInterval(() => pingUrls(), PING_INTERVAL);
+	// Clear any existing interval to prevent duplicates
+	if (globalThis.pingerInterval) {
+		clearInterval(globalThis.pingerInterval);
+		signale.info('Cleared existing pinger interval');
+	}
+	
+	globalThis.pingerInterval = setInterval(() => pingUrls(), PING_INTERVAL);
 	nextPingAt = getNextPingTime();
+	signale.info('Pinger interval initialized');
 }
 
 /**

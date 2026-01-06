@@ -9,8 +9,6 @@ export const load: PageServerLoad = async () => {
         orderBy: { createdAt: 'asc' }
     });
 
-
-    console.log(urls);
     return {
         urls,
         lastPingAt: lastPingAt?.getTime() ?? null,

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from '../../routes/$types';
-	import type { ServerEvent, ServerEventUrlPinged, ServerEventIntervalStatus } from '$lib/server/events';
+	import type { ServerEventUrlPinged, ServerEventIntervalStatus } from '$lib/server/events';
 	import { scale } from 'svelte/transition';
 	import { invalidateAll } from '$app/navigation';
 	import Clock from '$lib/components/Clock.svelte';
@@ -14,14 +14,15 @@
 	// svelte-ignore state_referenced_locally
 	let urls = $state(data.urls);
 
-	let errorMessage = $state<string | null>(null);
-	let newUrlInput = $state('');
-	let isLoading = $state(false);
-
+	// svelte-ignore state_referenced_locally
 	let intervalStatus = $state<{ lastPingAt: number | null; nextPingAt: number } | null>({
 		lastPingAt: data.lastPingAt,
 		nextPingAt: data.nextPingAt
 	});
+
+	let errorMessage = $state<string | null>(null);
+	let newUrlInput = $state('');
+	let isLoading = $state(false);
 
 	// Sync urls with data when it changes (after invalidateAll)
 	$effect(() => {
@@ -54,6 +55,7 @@
 								}
 							};
 						}
+						
 						return url;
 					});
 					break;
