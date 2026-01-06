@@ -15,8 +15,8 @@ RUN npm install
 # Copy source code
 COPY . .
 
-# Generate Prisma client
-RUN npx prisma generate
+# Generate Prisma client (DATABASE_URL not needed for generate, but config requires it)
+RUN DATABASE_URL=file:/tmp/dummy.db npx prisma generate
 
 # Build the application
 RUN npm run build
@@ -43,7 +43,7 @@ COPY prisma ./prisma
 COPY prisma.config.ts ./
 
 # Generate Prisma client in production
-RUN npx prisma generate
+RUN DATABASE_URL=file:/tmp/dummy.db npx prisma generate
 
 # Copy built application from builder stage
 COPY --from=builder /app/build ./build
