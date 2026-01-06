@@ -1,4 +1,5 @@
 import type { ServerEvent } from './server/events';
+import { parse } from 'devalue';
 import { onMount } from 'svelte';
 
 interface SSEClientOptions {
@@ -36,11 +37,11 @@ export function createSSEClient(options: SSEClientOptions) {
 
         eventSource.onmessage = (event) => {
             try {
-                const data = JSON.parse(event.data);
-                options.onMessage?.(data);
-            } catch (error) {
-                console.error('Failed to parse SSE message:', error);
-            }
+				const data = parse(event.data);
+				options.onMessage?.(data);
+			} catch (error) {
+				console.error('Failed to parse SSE message:', error);
+			}
         };
 
         eventSource.onerror = (error) => {

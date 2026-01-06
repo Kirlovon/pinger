@@ -1,4 +1,5 @@
 import type { RequestHandler } from '@sveltejs/kit';
+import { stringify } from 'devalue';
 import {
 	addClient,
 	removeClient,
@@ -16,7 +17,7 @@ export const GET: RequestHandler = async () => {
 
 			// Send initial connection message
 			const connectedMessage: ServerEventConnected = { type: 'connected', timestamp: Date.now() };
-			controller.enqueue(encoder.encode(`data: ${JSON.stringify(connectedMessage)}\n\n`));
+			controller.enqueue(encoder.encode(`data: ${stringify(connectedMessage)}\n\n`));
 
 			// Send initial interval status
 			const initialStatusMessage: ServerEventIntervalStatus = {
@@ -25,7 +26,7 @@ export const GET: RequestHandler = async () => {
 				lastPingAt: lastPingAt?.getTime() ?? null,
 				nextPingAt: nextPingAt.getTime()
 			};
-			controller.enqueue(encoder.encode(`data: ${JSON.stringify(initialStatusMessage)}\n\n`));
+			controller.enqueue(encoder.encode(`data: ${stringify(initialStatusMessage)}\n\n`));
 
 			// Send interval status every 5 seconds
 			const statusInterval = setInterval(() => {
@@ -36,7 +37,7 @@ export const GET: RequestHandler = async () => {
 						lastPingAt: lastPingAt?.getTime() ?? null,
 						nextPingAt: nextPingAt.getTime()
 					};
-					controller.enqueue(encoder.encode(`data: ${JSON.stringify(statusMessage)}\n\n`));
+					controller.enqueue(encoder.encode(`data: ${stringify(statusMessage)}\n\n`));
 				} catch (error) {
 					clearInterval(statusInterval);
 					removeClient(controller);

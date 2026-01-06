@@ -42,31 +42,29 @@
 			switch (event.type) {
 				case 'url_pinged': {
 					const urlPingedEvent = event as ServerEventUrlPinged;
+
 					// Update the URL in the list with new ping data
-					// Convert createdAt strings back to Date objects (JSON serialization converts Dates to strings)
 					urls = urls.map(url => {
 						if (url.id === urlPingedEvent.url.id) {
 							return {
 								...urlPingedEvent.url,
-								createdAt: new Date(urlPingedEvent.url.createdAt),
-								lastPing: {
-									...urlPingedEvent.ping,
-									createdAt: new Date(urlPingedEvent.ping.createdAt)
-								}
+								lastPing: urlPingedEvent.ping
 							};
 						}
-						
 						return url;
 					});
+
 					break;
 				}
 
 				case 'interval_status': {
 					const statusEvent = event as ServerEventIntervalStatus;
+
 					intervalStatus = {
 						lastPingAt: statusEvent.lastPingAt,
 						nextPingAt: statusEvent.nextPingAt
 					};
+					
 					break;
 				}
 			}

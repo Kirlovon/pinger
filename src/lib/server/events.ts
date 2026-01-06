@@ -1,3 +1,4 @@
+import { stringify } from 'devalue';
 import type { PingRequest, Url } from './prisma';
 
 // Store all active connections
@@ -36,7 +37,7 @@ export type ServerEvent =
  * @param event - The event to emit to all connected clients.
  */
 export function emitEvent(event: ServerEvent) {
-	const message = `data: ${JSON.stringify(event)}\n\n`;
+	const message = `data: ${stringify(event)}\n\n`;
 	const encoder = new TextEncoder();
 	const encoded = encoder.encode(message);
 
