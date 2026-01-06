@@ -1,52 +1,58 @@
-FROM node:22-alpine AS base
+# Build stage
+FROM node:22-alpine AS builder
 
-# Install dependencies only when needed
-FROM base AS deps
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json* ./
-RUN npm install
+COPY package*.json ./
 
-# Rebuild the source code only when needed
-FROM base AS builder
-WORKDIR /app
+# Install all dependencies (including devDependencies for build)
+RUN npm ci
 
-COPY --from=deps /app/node_modules ./node_modules
+# Copy source code
 COPY . .
 
-# Generate Prisma Client
+# Generate Prisma client
 RUN npx prisma generate
 
 # Build the application
 RUN npm run build
 
-# Production image, copy all the files and run the app
-FROM base AS runner
+# Production stage
+FROM node:22-alpine AS production
+
 WORKDIR /app
 
-ENV NODE_ENV=production
+# Install dependencies for better-sqlite3
+RUN apk add --no-cache python3 make g++
 
-# Create a non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 sveltekit
+# Copy package files
+COPY package*.json ./
 
-# Copy necessary files
+# Install only production dependencies
+RUN npm ci --omit=dev
+
+# Copy Prisma files for migrations
+COPY prisma ./prisma
+COPY prisma.config.ts ./
+
+# Generate Prisma client in production
+RUN npx prisma generate
+
+# Copy built application from builder stage
 COPY --from=builder /app/build ./build
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/prisma ./prisma
 
 # Create data directory for SQLite database
-RUN mkdir -p /app/data && chown -R sveltekit:nodejs /app/data
+RUN mkdir -p /app/data
 
-USER sveltekit
+# Set environment variables
+ENV NODE_ENV=production
+ENV HOST=0.0.0.0
+ENV PORT=3000
+ENV DATABASE_URL=file:/app/data/pinger.db
 
+# Expose port
 EXPOSE 3000
 
-ENV PORT=3000
-ENV HOST=0.0.0.0
-ENV DATABASE_URL="file:/app/data/data.db"
-
 # Run migrations and start the application
-CMD npx prisma migrate deploy && node build/index.js
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run start"]
