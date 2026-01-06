@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  pinger:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      # Optional: Set these to enable HTTP Basic Authentication
+      # - ACCESS_USERNAME=admin
+      # - ACCESS_PASSWORD=secret
+    restart: unless-stopped

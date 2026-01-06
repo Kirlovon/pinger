@@ -1,4 +1,3 @@
-import signale from 'signale';
 import { ACCESS_PASSWORD, ACCESS_USERNAME } from '$env/static/private';
 
 // Enable basic authentication if credentials are set

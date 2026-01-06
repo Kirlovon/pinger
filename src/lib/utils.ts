@@ -1,11 +1,12 @@
+
 /**
  * Returns a Tailwind color code based on the provided HTTP status code.
  * @param status - The HTTP status code.
  * @returns A string representing the Tailwind color code.
- */
+*/
 export function getStatusColor(status: number): string {
 	const firstDigit = Math.floor(status / 100);
-
+	
 	if (firstDigit === 2) return 'bg-lime-500';
 	if (firstDigit === 3) return 'bg-cyan-500';
 	if (firstDigit === 4) return 'bg-amber-500';
@@ -14,7 +15,6 @@ export function getStatusColor(status: number): string {
 }
 
 type SendRequestResult = { success: true; status: number; responseTime: number } | { success: false; error: string };
-
 /**
  * Sends an HTTP request with a timeout and returns status and timing information.
  * @param url - The URL to request.

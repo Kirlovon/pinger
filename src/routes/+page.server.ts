@@ -1,7 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { prisma } from '$lib/server/prisma';
-import { lastPingAt } from '$lib/server/pinger';
-import { PING_INTERVAL } from '$lib/config';
+import { lastPingAt, nextPingAt } from '$lib/server/pinger';
 
 // Pass URLs on load for initial rendering
 export const load: PageServerLoad = async () => {
@@ -9,10 +8,12 @@ export const load: PageServerLoad = async () => {
         include: { lastPing: true },
         orderBy: { createdAt: 'asc' }
     });
-    
+
+
+    console.log(urls);
     return {
         urls,
-        lastPingDate : lastPingAt,
-        pingInterval: PING_INTERVAL
+        lastPingAt: lastPingAt?.getTime() ?? null,
+        nextPingAt: nextPingAt.getTime()
     };
 };

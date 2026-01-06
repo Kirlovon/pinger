@@ -1,32 +1,51 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import { addClient, removeClient, type ServerEventConnected, type ServerEventPing } from '$lib/server/events';
+import {
+	addClient,
+	removeClient,
+	type ServerEventConnected,
+	type ServerEventIntervalStatus
+} from '$lib/server/events';
+import { lastPingAt, nextPingAt } from '$lib/server/pinger';
+import { PING_INTERVAL } from '$lib/config';
 
 export const GET: RequestHandler = async () => {
 	const stream = new ReadableStream({
 		start(controller) {
 			const encoder = new TextEncoder();
-
-			// Add client to the set
 			addClient(controller);
 
 			// Send initial connection message
-			const message: ServerEventConnected = { type: 'connected', timestamp: Date.now() };
-			controller.enqueue(encoder.encode(`data: ${JSON.stringify(message)}\n\n`));
+			const connectedMessage: ServerEventConnected = { type: 'connected', timestamp: Date.now() };
+			controller.enqueue(encoder.encode(`data: ${JSON.stringify(connectedMessage)}\n\n`));
 
-			// Send periodic updates
-			const interval = setInterval(() => {
+			// Send initial interval status
+			const initialStatusMessage: ServerEventIntervalStatus = {
+				type: 'interval_status',
+				timestamp: Date.now(),
+				lastPingAt: lastPingAt?.getTime() ?? null,
+				nextPingAt: nextPingAt.getTime()
+			};
+			controller.enqueue(encoder.encode(`data: ${JSON.stringify(initialStatusMessage)}\n\n`));
+
+			// Send interval status every 5 seconds
+			const statusInterval = setInterval(() => {
 				try {
-					const message: ServerEventPing = { type: 'ping', timestamp: Date.now()};
-					controller.enqueue(encoder.encode(`data: ${JSON.stringify(message)}\n\n`));
+					const statusMessage: ServerEventIntervalStatus = {
+						type: 'interval_status',
+						timestamp: Date.now(),
+						lastPingAt: lastPingAt?.getTime() ?? null,
+						nextPingAt: nextPingAt.getTime()
+					};
+					controller.enqueue(encoder.encode(`data: ${JSON.stringify(statusMessage)}\n\n`));
 				} catch (error) {
-					clearInterval(interval);
+					clearInterval(statusInterval);
 					removeClient(controller);
 				}
-			}, 1000);
+			}, 5000);
 
 			// Cleanup on close
 			return () => {
-				clearInterval(interval);
+				clearInterval(statusInterval);
 				removeClient(controller);
 			};
 		}

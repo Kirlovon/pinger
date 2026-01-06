@@ -1,25 +1,21 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { browser } from '$app/environment';
-	import { invalidateAll } from '$app/navigation';
-	import { REQUEST_TIMEOUT } from '$lib/config';
+	import { PING_INTERVAL } from '$lib/config';
 
-	let { interval, lastPingDate }: { interval: number; lastPingDate: Date } = $props();
+	let { intervalStatus }: { intervalStatus: { lastPingAt: number | null; nextPingAt: number } } = $props();
 
 	let percent: number = $state(getPercent());
-	let currentlyPinging = $derived(percent > 95);
+	let currentlyPinging = $derived(percent >= 95);
 
 	function getPercent() {
-		const timeElapsed = Date.now() - lastPingDate.getTime() - REQUEST_TIMEOUT;
-		const newPercent = Math.floor((timeElapsed / interval) * 100);
+		// If no lastPingAt, calculate start time from nextPingAt and interval
+		const startTime = intervalStatus.lastPingAt ?? (intervalStatus.nextPingAt - PING_INTERVAL);
+		const totalDuration = intervalStatus.nextPingAt - startTime;
+		const timeElapsed = Date.now() - startTime;
+		const newPercent = Math.floor((timeElapsed / totalDuration) * 100);
 
-		if (newPercent > 100) {
-			if (browser) invalidateAll();
-			// lastPingDate = new Date();
-			return newPercent - 100;
-		}
-
-		return newPercent;
+		// Clamp percent between 0 and 100
+		return Math.max(0, Math.min(100, newPercent));
 	}
 
 	onMount(() => {
@@ -35,5 +31,5 @@
 	class="w-6 h-6 rounded-full overflow-hidden border-2 border-stone-800 transition-transform duration-300"
 	style:transform={currentlyPinging ? 'scale(0.75)' : 'scale(1)'}
 >
-	<div class="w-full h-full" style={`background: conic-gradient(rgb(41, 37, 36) ${percent}%, 0, transparent)`}></div>
+	<div class="w-full h-full" style={`background: conic-gradient(var(--color-stone-800) ${percent}%, 0, transparent)`}></div>
 </div>

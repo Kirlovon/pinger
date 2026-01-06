@@ -1,8 +1,9 @@
+import type { ServerEvent } from './server/events';
 import { onMount } from 'svelte';
 
 interface SSEClientOptions {
     url: string;
-    onMessage?: (data: unknown) => void;
+    onMessage?: (data: ServerEvent) => void;
     onError?: (error: Event) => void;
     onOpen?: () => void;
 }

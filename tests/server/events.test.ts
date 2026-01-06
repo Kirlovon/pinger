@@ -83,8 +83,13 @@ describe('events', () => {
 			addClient(controller1);
 			addClient(controller2);
 
-			const testData = { message: 'test', value: 123 };
-			emitEvent(testData);
+			const testEvent = {
+				type: 'interval_status' as const,
+				timestamp: Date.now(),
+				lastPingAt: Date.now(),
+				nextPingAt: Date.now() + 5000
+			};
+			emitEvent(testEvent);
 
 			expect(controller1.enqueue).toHaveBeenCalled();
 			expect(controller2.enqueue).toHaveBeenCalled();
@@ -98,8 +103,8 @@ describe('events', () => {
 			const controller = createMockController();
 			addClient(controller);
 
-			const testData = { message: 'hello' };
-			emitEvent(testData);
+			const testEvent = { type: 'connected' as const, timestamp: Date.now() };
+			emitEvent(testEvent);
 
 			// Decode the enqueued data
 			const decoder = new TextDecoder();
@@ -114,8 +119,7 @@ describe('events', () => {
 			const jsonStr = decodedMessage.replace('data: ', '').trim();
 			const parsed = JSON.parse(jsonStr);
 
-			expect(parsed.type).toBe('data');
-			expect(parsed.data).toEqual(testData);
+			expect(parsed.type).toBe('connected');
 			expect(typeof parsed.timestamp).toBe('number');
 
 			// Cleanup
@@ -135,7 +139,12 @@ describe('events', () => {
 			addClient(failingController);
 			const countAfterAdd = getClientCount();
 
-			emitEvent({ test: 'data' });
+			emitEvent({
+				type: 'interval_status' as const,
+				timestamp: Date.now(),
+				lastPingAt: Date.now(),
+				nextPingAt: Date.now() + 5000
+			});
 
 			// Client should be removed after failed enqueue
 			expect(getClientCount()).toBe(countAfterAdd - 1);
@@ -156,7 +165,12 @@ describe('events', () => {
 			addClient(failingController);
 			addClient(workingController);
 
-			emitEvent({ test: 'data' });
+			emitEvent({
+				type: 'interval_status' as const,
+				timestamp: Date.now(),
+				lastPingAt: Date.now(),
+				nextPingAt: Date.now() + 5000
+			});
 
 			// Working controller should still receive the event
 			expect(workingController.enqueue).toHaveBeenCalled();
@@ -167,7 +181,14 @@ describe('events', () => {
 
 		it('does nothing when no clients connected', () => {
 			// Just ensure it doesn't throw
-			expect(() => emitEvent({ data: 'test' })).not.toThrow();
+			expect(() =>
+				emitEvent({
+					type: 'interval_status' as const,
+					timestamp: Date.now(),
+					lastPingAt: Date.now(),
+					nextPingAt: Date.now() + 5000
+				})
+			).not.toThrow();
 		});
 
 		it('includes timestamp in event payload', () => {
@@ -175,7 +196,12 @@ describe('events', () => {
 			addClient(controller);
 
 			const beforeTime = Date.now();
-			emitEvent({ test: 'data' });
+			emitEvent({
+				type: 'interval_status' as const,
+				timestamp: Date.now(),
+				lastPingAt: Date.now(),
+				nextPingAt: Date.now() + 5000
+			});
 			const afterTime = Date.now();
 
 			const decoder = new TextDecoder();

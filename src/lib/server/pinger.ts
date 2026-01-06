@@ -4,6 +4,7 @@ import { sendRequest } from '$lib/utils';
 import { PING_INTERVAL, REQUEST_TIMEOUT } from '$lib/config';
 import { prisma, type Url } from './prisma.ts';
 import { nanoid } from 'nanoid';
+import { emitEvent } from './events';
 
 // Max 10 concurrent requests
 const limit = pLimit(10); 
@@ -33,19 +34,27 @@ function getNextPingTime(): Date {
  * Send ping requests to all URLs in the database.
  */
 async function pingUrls() {
-	
 	try {
 		const urls = await prisma.url.findMany();
-		
+
+		signale.info(`Starting ping cycle for ${urls.length} URLs.`);
+
 		lastPingAt = new Date();
 		const promises = urls.map(url => limit(() => pingUrl(url)));
 		await Promise.all(promises);
 		nextPingAt = getNextPingTime();
 
+		// Emit interval status event after all pings complete
+		emitEvent({
+			type: 'interval_status',
+			timestamp: Date.now(),
+			lastPingAt: lastPingAt.getTime(),
+			nextPingAt: nextPingAt.getTime()
+		});
+
 	} catch (error) {
 		signale.error(error);
 	}
-
 }
 
 /**
@@ -61,9 +70,9 @@ async function pingUrl(url: Url, timeout: number = REQUEST_TIMEOUT) {
 	}
 	
 	signale.success(`Ping to ${url.url} succeeded: ${response.status} in ${response.responseTime}ms`);
-	
+
 	// Save ping request
-	await prisma.pingRequest.upsert({
+	const pingRequest = await prisma.pingRequest.upsert({
 		where: { urlId: url.id },
 		update: {
 			status: response.status,
@@ -76,5 +85,13 @@ async function pingUrl(url: Url, timeout: number = REQUEST_TIMEOUT) {
 			status: response.status,
 			responseTime: response.responseTime,
 		},
+	});
+
+	// Emit url_pinged event
+	emitEvent({
+		type: 'url_pinged',
+		timestamp: Date.now(),
+		url,
+		ping: pingRequest
 	});
 }

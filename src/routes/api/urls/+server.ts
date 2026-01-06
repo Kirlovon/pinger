@@ -31,7 +31,9 @@ export const POST: RequestHandler = async ({ request }) => {
 	return json({ url: newUrl }, { status: 201 });
 };
 
-// DELETE - Remove a URL by ID
+/**
+ * DELETE - Delete a URL
+ */
 export const DELETE: RequestHandler = async ({ request }) => {
 	const body = await request.json();
 	const result = deleteUrlSchema.safeParse(body);

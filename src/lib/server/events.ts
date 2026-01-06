@@ -1,3 +1,5 @@
+import type { PingRequest, Url } from './prisma';
+
 // Store all active connections
 const clients = new Set<ReadableStreamDefaultController>();
 
@@ -7,35 +9,34 @@ export interface ServerEventConnected {
 	timestamp: number;
 }
 
-// Structure of ping event
-export interface ServerEventPing {
-	type: 'ping';
+// Event when a URL is pinged
+export interface ServerEventUrlPinged {
+	type: 'url_pinged';
 	timestamp: number;
+	url: Url;
+	ping: PingRequest;
 }
 
-// Structure of general data event
-export interface ServerEventData {
-	type: 'data';
+// Event with interval status (timing information)
+export interface ServerEventIntervalStatus {
+	type: 'interval_status';
 	timestamp: number;
-	data: Record<string, any>;
+	lastPingAt: number | null;
+	nextPingAt: number;
 }
 
 // Union type for all events
-export type ServerEvent = ServerEventConnected | ServerEventPing | ServerEventData;
+export type ServerEvent =
+	| ServerEventConnected
+	| ServerEventUrlPinged
+	| ServerEventIntervalStatus;
 
 /**
  * Emits an event to all connected clients.
- * @param type - The type of the event.
- * @param data - The data associated with the event.
+ * @param event - The event to emit to all connected clients.
  */
-export function emitEvent(data: ServerEventData['data']) {
-	const payload: ServerEventData = {
-		type: 'data',
-		timestamp: Date.now(),
-		data
-	};
-
-	const message = `data: ${JSON.stringify(payload)}\n\n`;
+export function emitEvent(event: ServerEvent) {
+	const message = `data: ${JSON.stringify(event)}\n\n`;
 	const encoder = new TextEncoder();
 	const encoded = encoder.encode(message);
 
