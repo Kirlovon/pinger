@@ -63,7 +63,38 @@ npx prisma migrate dev   # Create database migrations
 
 ## Docker Deployment
 
-### Build and Run with Docker
+### Quick Start with Docker Compose (Recommended)
+
+The easiest way to deploy with persistent storage:
+
+```sh
+# Start the application
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop the application
+docker-compose down
+```
+
+The SQLite database will be stored in `./data/pinger.db` on your host machine and will persist across container restarts and redeployments.
+
+Visit `http://localhost:3000` to access the application.
+
+### Docker Compose Configuration
+
+Enable HTTP Basic Authentication by editing `docker-compose.yml`:
+
+```yaml
+environment:
+  - ACCESS_USERNAME=admin
+  - ACCESS_PASSWORD=secret
+```
+
+Then restart: `docker-compose restart`
+
+### Manual Docker Commands
 
 ```sh
 # Build the Docker image
@@ -75,7 +106,7 @@ docker run -p 3000:3000 pinger
 # Run with persistent database (recommended)
 docker run -p 3000:3000 -v $(pwd)/data:/app/data pinger
 
-# Run with environment variables for authentication
+# Run with authentication
 docker run -p 3000:3000 \
   -v $(pwd)/data:/app/data \
   -e ACCESS_USERNAME=admin \
@@ -83,41 +114,19 @@ docker run -p 3000:3000 \
   pinger
 ```
 
-### Using Docker Compose
-
-Create a `docker-compose.yml` file:
-
-```yaml
-version: '3.8'
-
-services:
-  pinger:
-    build: .
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./data:/app/data
-    environment:
-      - ACCESS_USERNAME=admin
-      - ACCESS_PASSWORD=secret
-    restart: unless-stopped
-```
-
-Then run:
-
-```sh
-docker-compose up -d
-```
-
-Visit `http://localhost:3000` to access the application.
-
 ### Volume Mounting
-The database file is stored in `/app/data/data.db` inside the container. To persist data across container restarts:
+
+The database file is stored at `/app/data/pinger.db` inside the container. To persist data across redeployments:
+
 - **Linux/macOS**: `-v $(pwd)/data:/app/data`
 - **Windows (PowerShell)**: `-v ${PWD}/data:/app/data`
 - **Windows (CMD)**: `-v %cd%/data:/app/data`
 
-The `data` directory will be created automatically on your host machine if it doesn't exist.
+The `data` directory on your host machine will contain:
+- `pinger.db` - SQLite database file
+- `pinger.db-journal` - SQLite journal file (temporary)
+
+These files will persist across container restarts, updates, and redeployments.
 
 ## License
 

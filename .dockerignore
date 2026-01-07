@@ -17,3 +17,7 @@ data.db-journal
 tests
 coverage
 .github
+docker-compose.yml
+Dockerfile
+.dockerignore
+data/
