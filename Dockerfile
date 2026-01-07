@@ -6,6 +6,9 @@ RUN npm install -g npm@11
 
 WORKDIR /app
 
+# Install dependencies for better-sqlite3
+RUN apk add --no-cache python3 make g++
+
 # Copy package files
 COPY package*.json ./
 
@@ -27,10 +30,10 @@ FROM node:22-alpine AS production
 # Ensure consistent npm version
 RUN npm install -g npm@11
 
-WORKDIR /app
-
 # Install dependencies for better-sqlite3
 RUN apk add --no-cache python3 make g++
+
+WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
