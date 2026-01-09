@@ -1,8 +1,7 @@
 ![Pinger Preview](./assets/preview.webp)
 
 # Pinger
-
-A lightweight, self-hosted URL monitoring tool. It periodically pings any URLs you add and records their HTTP status code and response latency. The dashboard automatically refreshes to show the latest results.
+A lightweight, self-hosted service for URL pinging that periodically pings any URLs you add and records their latest HTTP status code and response latency.
 
 **Use cases:**
 - Keep serverless functions warm by hitting them periodically
