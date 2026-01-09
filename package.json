@@ -5,6 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"start": "node build/index.js",
+		"db:deploy": "prisma migrate deploy",
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",

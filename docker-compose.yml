@@ -1,25 +1,21 @@
-version: '3.8'
-
 services:
   pinger:
-    build: .
-    container_name: pinger
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     volumes:
-      - ./data:/app/data
+      # Persist SQLite database
+      - pinger-data:/app/data
     environment:
-      # Optional HTTP Basic Authentication
-      # Uncomment and set your credentials
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/data.db
+      # Optional: Uncomment and set your auth credentials
       # - ACCESS_USERNAME=admin
       # - ACCESS_PASSWORD=secret
-
-      # Database is already configured in Dockerfile
-      # DATABASE_URL is set to file:/app/data/pinger.db
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+
+volumes:
+  pinger-data:
+    driver: local

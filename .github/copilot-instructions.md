@@ -54,7 +54,6 @@ npx prisma migrate dev   # Create and apply migrations
 ### Server-Side Utilities
 - **Logging**: Use `signale` library for structured logs (`.info`, `.success`, `.warn`, `.error`)
 - **Global State**: Use `globalThis` for server-side singletons (e.g., `globalThis.interval` for pinger timer)
-- **Environment**: Access via `$env/static/private` for server-only secrets
 
 ## Critical Files
 - `src/hooks.server.ts`: Server initialization (auth, pinger interval setup)

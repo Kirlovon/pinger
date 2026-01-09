@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock environment variables before importing the module
-vi.mock('$env/static/private', () => ({
-	ACCESS_USERNAME: 'testuser',
-	ACCESS_PASSWORD: 'testpassword'
+vi.mock('$env/dynamic/private', () => ({
+	env: {
+		ACCESS_USERNAME: 'testuser',
+		ACCESS_PASSWORD: 'testpassword'
+	}
 }));
 
 describe('auth', () => {

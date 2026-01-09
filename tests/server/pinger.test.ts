@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { interval, lastPingAt, nextPingAt, setupInterval } from '$lib/server/pinger';
+import { lastPingAt, nextPingAt, setupInterval } from '$lib/server/pinger';
 import { PING_INTERVAL } from '$lib/config';
 
 // Mock dependencies
@@ -22,7 +22,8 @@ vi.mock('signale', () => ({
 	default: {
 		error: vi.fn(),
 		warn: vi.fn(),
-		success: vi.fn()
+		success: vi.fn(),
+		info: vi.fn()
 	}
 }));
 
@@ -33,8 +34,9 @@ describe('pinger', () => {
 
 	afterEach(() => {
 		vi.useRealTimers();
-		if (interval) {
-			clearInterval(interval);
+		if (globalThis.pingerInterval) {
+			clearInterval(globalThis.pingerInterval);
+			globalThis.pingerInterval = null;
 		}
 		vi.clearAllMocks();
 	});
@@ -42,7 +44,7 @@ describe('pinger', () => {
 	describe('setupInterval', () => {
 		it('creates an interval', () => {
 			setupInterval();
-			expect(interval).not.toBeNull();
+			expect(globalThis.pingerInterval).not.toBeNull();
 		});
 
 		it('sets nextPingAt to future time', () => {
@@ -54,10 +56,10 @@ describe('pinger', () => {
 
 		it('clears existing interval when called again', () => {
 			setupInterval();
-			const firstInterval = interval;
+			const firstInterval = globalThis.pingerInterval;
 			
 			setupInterval();
-			const secondInterval = interval;
+			const secondInterval = globalThis.pingerInterval;
 
 			expect(firstInterval).not.toBe(secondInterval);
 		});
@@ -78,6 +80,7 @@ describe('pinger', () => {
 			// After the module is imported but before setupInterval is called,
 			// if no previous test ran, interval might be null or set from previous test
 			// This test verifies the type is correct
+			const interval = globalThis.pingerInterval;
 			expect(interval === null || typeof interval === 'object').toBe(true);
 		});
 	});

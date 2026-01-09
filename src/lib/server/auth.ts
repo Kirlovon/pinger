@@ -1,4 +1,8 @@
-import { ACCESS_PASSWORD, ACCESS_USERNAME } from '$env/static/private';
+import { env } from '$env/dynamic/private';
+
+// Retrieve credentials from environment variables
+const ACCESS_USERNAME = env.ACCESS_USERNAME;
+const ACCESS_PASSWORD = env.ACCESS_PASSWORD;
 
 // Enable basic authentication if credentials are set
 export const isAuthEnabled = typeof ACCESS_PASSWORD === 'string' && typeof ACCESS_USERNAME === 'string' && ACCESS_PASSWORD.length > 0 && ACCESS_USERNAME.length > 0;
