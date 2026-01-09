@@ -1,88 +1,94 @@
-# Copilot Instructions for Pinger
+# Pinger - AI Coding Instructions
 
-## Project Overview
-Pinger is a SvelteKit 2 application that periodically pings URLs and tracks their response times and status codes. Built with Svelte 5 (runes API), Prisma, SQLite, and Tailwind CSS 4.
+## Architecture Overview
 
-## Architecture
+**Tech Stack:** SvelteKit 2 + Svelte 5 (runes), Prisma 7, SQLite (Better-SQLite3 adapter), Tailwind CSS 4, Vitest
 
-### Core Services
-- **Pinger Service** (`src/lib/server/pinger.ts`): Background interval that fetches all URLs from DB and sends HTTP requests every 5 seconds (configured in `src/lib/config.ts`). Uses `globalThis.interval` for persistent timer across HMR. Initialized in `hooks.server.ts` on server startup.
-- **SSE Events** (`src/lib/server/events.ts`): Shared event emitter managing all active SSE client connections. Use `emitEvent(event, data)` to broadcast to all connected clients. Endpoint at `src/routes/api/events/+server.ts`.
-- **Auth** (`src/lib/server/auth.ts`): Optional HTTP Basic Auth via `ACCESS_USERNAME` and `ACCESS_PASSWORD` env vars. Applied globally in `hooks.server.ts`.
+**Core Flow:** Server-side interval (`hooks.server.ts`) → Periodic ping execution (`pinger.ts`) → Real-time updates via SSE (`events.ts`) → Client reactivity (Svelte 5 runes)
 
-### Data Flow
-1. User adds URL via form → POST `/api/urls` → validated with Zod → saved to SQLite
-2. Background interval fetches URLs → sends requests with 500ms timeout → upserts `PingRequest` with status/responseTime
-3. Frontend uses SSR (initial load) + `invalidateAll()` for updates (not SSE currently, despite endpoint existing)
+The app monitors URLs by pinging them periodically and displaying results in real-time. The pinger runs server-side on an interval set in `hooks.server.ts` via `setupInterval()`. Results are broadcast to all connected clients using Server-Sent Events (SSE).
 
-### Database (Prisma)
-- **Custom output path**: Prisma client generates to `src/lib/server/prisma/` (not default `node_modules/.prisma`)
-- **Import from**: `$lib/server/prisma` (aliased in `tsconfig.json`)
-- **Schema**: `Url` (1) ↔ (0-1) `PingRequest` via `urlId` unique constraint. Last ping overwrites previous (upsert pattern).
-- **Migrations**: Run `npx prisma migrate dev` after schema changes
+## Key Architectural Patterns
 
-## Development Commands
-```bash
-npm run dev              # Start dev server (Vite HMR)
-npm run build            # Production build
-npx prisma studio        # Visual DB browser
-npx prisma migrate dev   # Create and apply migrations
+### Server-Side State Management
+- **Global Interval:** Pinger uses `globalThis.pingerInterval` to persist across HMR reloads ([pinger.ts](../src/lib/server/pinger.ts))
+- **Exported State:** `lastPingAt` and `nextPingAt` are exported from `pinger.ts` and imported by API routes for SSE broadcasting
+- **Concurrency Control:** Uses `p-limit` (max 10 concurrent) for URL pings to prevent overwhelming the server
+
+### Real-Time Communication
+- **SSE Pattern:** Client connects to `/api/events` → Server pushes updates via `emitEvent()` → Client updates state via `$state()` runes
+- **Serialization:** Uses `devalue` (not JSON) for type-safe serialization between server and client
+- **Event Types:** `ServerEvent` union type in `events.ts` defines all possible events (`connected`, `url_pinged`, `interval_status`)
+
+### Svelte 5 Runes (Not Options API)
+```svelte
+<!-- Use $state(), $props(), $effect() - NO export let -->
+let urls = $state(data.urls);
+const { data }: { data: PageData } = $props();
+$effect(() => { /* side effects */ });
 ```
 
-## Key Conventions
+### Prisma Configuration
+- **Custom Generator:** Uses Prisma 7 with custom output directory (`prisma/generated/`) for type-safe client
+- **Config File:** `prisma.config.ts` (not `.env` alone) defines schema path and datasource
+- **Relations:** `Url.lastPing` is a 1:1 relation to `PingRequest` via `@unique` on `urlId`
 
-### Svelte 5 Runes (Required)
-- Use `$state`, `$derived`, `$effect`, `$props` instead of old reactive declarations
-- Example: `let count = $state(0)` not `let count = 0` with `$:` reactivity
-- Props: `const { data }: { data: PageData } = $props()`
+## Development Workflow
 
-### SvelteKit Patterns
-- **Route Exports**: Only export `prerender`, `trailingSlash`, `config`, `entries`, HTTP methods (`GET`, `POST`, etc.), `fallback`, or `_prefixed` functions. No other named exports allowed in `+server.ts` files.
-- **Data Loading**: Use `+page.server.ts` for SSR data with `PageServerLoad`. Return plain objects; they're automatically serialized.
-- **API Routes**: Define in `src/routes/api/` with `+server.ts`. Use `json()` helper from `@sveltejs/kit` for responses.
+### Essential Commands
+```bash
+npm run dev              # Vite dev server (port 5173)
+npm test                 # Vitest watch mode
+npm run test:run         # Single test run
+npx prisma studio        # Visual DB browser
+npx prisma migrate dev   # Create & apply migration
+```
 
-### Validation
-- All user input validated with Zod schemas in `src/lib/schema.ts`
-- Use `.safeParse()` pattern, return 400 errors with `.error.message`
-- Example: localhost URLs explicitly blocked in `POST /api/urls`
+### Environment Setup
+Create `.env` before first run:
+```env
+DATABASE_URL="file:./data/data.db"
+ACCESS_USERNAME=""       # Optional HTTP Basic Auth
+ACCESS_PASSWORD=""
+```
 
-### Styling
-- Tailwind 4 via Vite plugin (`@tailwindcss/vite`)
-- No `tailwind.config.js` needed with v4
-- Utility-first approach; minimal custom CSS
+### Testing Conventions
+- **Location:** `tests/` directory mirrors `src/lib/` structure
+- **Mocking:** Mock `$lib/*` imports, not relative paths. Example: `vi.mock('$lib/server/prisma')`
+- **Vitest Config:** `vitest.config.ts` sets up jsdom environment and `$lib` alias
 
-### Server-Side Utilities
-- **Logging**: Use `signale` library for structured logs (`.info`, `.success`, `.warn`, `.error`)
-- **Global State**: Use `globalThis` for server-side singletons (e.g., `globalThis.interval` for pinger timer)
+## Project-Specific Conventions
 
-## Critical Files
-- `src/hooks.server.ts`: Server initialization (auth, pinger interval setup)
-- `src/lib/server/pinger.ts`: Core ping logic with timeout handling
-- `src/lib/server/events.ts`: SSE event broadcasting (currently unused by frontend)
-- `prisma/schema.prisma`: Database schema (custom output path to `src/lib/server/prisma/`)
+### Validation & Types
+- **Zod Schemas:** All input validation uses Zod with custom types (`z.nanoid()`, `z.url()`) in `schema.ts`
+- **Prisma Types:** Import types from `$lib/server/prisma` (re-exports from generated client), not direct from `@prisma/client`
 
-## Common Tasks
+### API Routes
+- **SvelteKit Convention:** `+server.ts` files export `GET`, `POST`, etc. as named `RequestHandler` functions
+- **Error Handling:** Return `json()` responses with appropriate HTTP status codes, not thrown errors
+- **SSE Endpoints:** Use `ReadableStream` with `text/event-stream` content type
 
-### Adding a new URL field
-1. Update `prisma/schema.prisma`
-2. Run `npx prisma migrate dev --name add_field_name`
-3. Update Zod schema in `src/lib/schema.ts`
-4. Update UI in `src/routes/+page.svelte`
+### Configuration
+- **Runtime Config:** `src/lib/config.ts` for user-adjustable values (`PING_INTERVAL`, `REQUEST_TIMEOUT`)
+- **Auth Logic:** `src/lib/server/auth.ts` handles HTTP Basic Auth, checked in `hooks.server.ts` middleware
 
-### Changing ping behavior
-- Modify interval/timeout in `src/lib/config.ts`
-- Update logic in `src/lib/server/pinger.ts` → `sendRequest()` function
-- Restart dev server (interval initialized once in `hooks.server.ts`)
+## Docker Deployment
 
-### Adding SSE real-time updates
-Currently `emitEvent()` exists but isn't consumed. To use:
-1. Connect EventSource in `+page.svelte`: `new EventSource('/api/events')`
-2. Call `emitEvent('update', data)` from `pinger.ts` after DB writes
-3. Handle events client-side instead of `invalidateAll()`
+- **Compose First:** `docker-compose.yml` is primary deployment method
+- **Volume Mount:** `./data:/app/data` persists SQLite database across container restarts
+- **Migration Timing:** Dockerfile runs `prisma migrate deploy` during build, not at runtime
+- **Environment:** Pass `ACCESS_USERNAME` and `ACCESS_PASSWORD` via compose environment or `.env` file
 
-## Gotchas
-- Prisma client is NOT in `node_modules`—always import from `$lib/server/prisma`
-- SvelteKit route files have strict export rules—move helper functions to separate modules
-- Background interval persists via `globalThis`—must manually clear/reset on changes
-- Tailwind 4 syntax differs from v3 (no config file, direct imports)
-- Svelte 5 runes are mandatory—no legacy reactive syntax
+## Critical Integration Points
+
+1. **Prisma → Events:** `pinger.ts` calls `emitEvent()` after upserting ping results
+2. **Events → SSE:** `events.ts` maintains a `Set<ReadableStreamDefaultController>` for broadcasting
+3. **SSE → Client:** `sseClient.ts` wraps EventSource with `onMount`/cleanup for Svelte lifecycle
+4. **Client → API:** `UrlMonitor.svelte` posts to `/api/urls` for CRUD, then calls `invalidateAll()` to refresh
+
+## Common Pitfalls
+
+- **Don't** use `export let` in Svelte components - use `$props()` rune
+- **Don't** import Prisma types directly - use `$lib/server/prisma` re-exports
+- **Don't** forget to call `invalidateAll()` after mutations to refresh server data
+- **Don't** use JSON for SSE - use `devalue` for `stringify`/`parse` to handle Date objects
