@@ -2,12 +2,13 @@
 	import type { PageData } from '../../routes/$types';
 	import type { ServerEventUrlPinged, ServerEventIntervalStatus } from '$lib/server/events';
 	import { scale } from 'svelte/transition';
-	import { invalidate, invalidateAll } from '$app/navigation';
+	import { invalidateAll } from '$app/navigation';
 	import Clock from '$lib/components/Clock.svelte';
 	import UrlList from '$lib/components/UrlList.svelte';
 	import UrlInput from '$lib/components/UrlInput.svelte';
 	import { createUrlSchema } from '$lib/schema';
 	import { createSSEClient } from '$lib/sseClient';
+	import { PING_INTERVAL } from '$lib/config';
 
 	const { data }: { data: PageData } = $props();
 
@@ -132,23 +133,45 @@
 			return;
 		}
 	}
+
+	/**
+	 * Handle copying a URL to clipboard
+	 * @param id ID of the URL instance to copy. (NanoId)
+	 */
+	async function handleCopyUrl(id: string) {
+		const urlToCopy = urls.find(url => url.id === id);
+		if (urlToCopy) {
+			try {
+				await navigator.clipboard.writeText(urlToCopy.url);
+			} catch (error) {
+				console.error('Failed to copy URL to clipboard:', error);
+			}
+		}
+	}
+
+	// Human-readable interval string (e.g. "every 5 seconds")
+	const intervalSeconds = Math.floor(PING_INTERVAL / 1000);
+	const readableInterval = intervalSeconds === 1 ? 'second' : `${intervalSeconds} seconds`;
 </script>
 
-<div class="flex min-h-svh justify-center py-32">
-	<main class="container max-w-3xl flex flex-col gap-4 mx-auto px-8">
-		<div class="relative mb-8">
+<div class="flex min-h-svh justify-center items-center py-32">
+	<main class="container max-w-3xl flex flex-col gap-12 mx-auto px-8 mb-64">
+		<div class="relative">
 			<h1 class="text-xl font-black pb-1 font-serif mb-1">pinger.</h1>
-			<p class="max-w-lg">This service will send GET requests to the specified URLs on a minute-by-minute basis.</p>
+			<p class="max-w-[60ch]">This service will send GET requests to the specified URLs <i class="underline decoration-wavy underline-offset-6 font-medium">every {readableInterval}</i>.</p>
 
 			{#if urls?.length && intervalStatus}
-				<div class="absolute right-2 top-2" transition:scale>
+				<div class="absolute right-4 top-4" transition:scale>
 					<Clock intervalStatus={intervalStatus} />
 				</div>
 			{/if}
 		</div>
 
-		<UrlList {urls} onDelete={handleDeleteUrl} />
+		<div class="flex flex-col gap-4">
+			<UrlList {urls} onDelete={handleDeleteUrl} onCopy={handleCopyUrl} />
+			<UrlInput bind:value={newUrlInput} {errorMessage} {isLoading} onSubmit={handleAddUrl} />
+		</div>
 
-		<UrlInput bind:value={newUrlInput} {errorMessage} {isLoading} onSubmit={handleAddUrl} />
+
 	</main>
 </div>

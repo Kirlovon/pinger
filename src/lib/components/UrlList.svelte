@@ -1,14 +1,13 @@
 <script lang="ts">
 	import type { Url, PingRequest } from '$lib/server/prisma';
 	import { slide, fade } from 'svelte/transition';
-	import TrashIcon from '$lib/components/TrashIcon.svelte';
 	import { getStatusColor } from '$lib/utils';
 
 	interface UrlWithPing extends Url {
 		lastPing: PingRequest | null;
 	}
 
-	let { urls, onDelete }: { urls: UrlWithPing[]; onDelete: (id: string) => void } = $props();
+	let { urls, onDelete, onCopy }: { urls: UrlWithPing[]; onDelete: (id: string) => void; onCopy: (id: string) => void } = $props();
 </script>
 
 <div class="border border-stone-300 rounded-md bg-white overflow-hidden" class:border-none={urls?.length === 0}>
@@ -33,12 +32,14 @@
 					{/key}
 				{/if}
 
-				<button
-					onclick={() => onDelete(url.id)}
-					class="absolute right-4 block opacity-0 translate-y-1 transition-all group-hover/url:translate-y-0 group-hover/url:opacity-100 hover:text-red-600 cursor-pointer"
-				>
-					<TrashIcon />
-				</button>
+				<div class="flex items-center text-xs text-stone-400 absolute right-2 top-0 h-full opacity-0 translate-y-1 transition-all group-hover/url:translate-y-0 group-hover/url:opacity-100">
+					<button onclick={() => onCopy(url.id)} class="block transition-all hover:text-emerald-600 cursor-pointer active:scale-90 px-2">
+						<span class="text-xs">Copy</span>
+					</button>
+					<button onclick={() => onDelete(url.id)} class="block transition-all hover:text-red-600 cursor-pointer active:scale-90 px-2">
+						<span class="text-xs">Delete</span>
+					</button>
+				</div>
 			</div>
 		</div>
 	{/each}
