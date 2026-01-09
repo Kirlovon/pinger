@@ -1,4 +1,4 @@
-![Pinger Preview](./static/preview.webp)
+![Pinger Preview](./assets/preview.webp)
 
 # Pinger
 
