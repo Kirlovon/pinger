@@ -37,7 +37,10 @@
 		class="px-4 py-3 w-full border-none focus:outline-none placeholder:text-stone-400"
 	/>
 
-	<button onclick={() => onSubmit(value)} class="px-6 py-3 border-l border-stone-300 whitespace-nowrap font-medium cursor-pointer">
+	<button
+		onclick={() => onSubmit(value)}
+		class="px-6 py-3 border-l border-stone-300 whitespace-nowrap font-medium cursor-pointer hover:text-stone-500 disabled:cursor-not-allowed disabled:text-stone-400"
+	>
 		Add URL
 	</button>
 </div>

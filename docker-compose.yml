@@ -3,19 +3,21 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: pinger
+    restart: unless-stopped
     ports:
       - "3000:3000"
-    volumes:
-      # Persist SQLite database
-      - pinger-data:/app/data
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=file:/app/data/data.db
-      # Optional: Uncomment and set your auth credentials
-      # - ACCESS_USERNAME=admin
-      # - ACCESS_PASSWORD=secret
-    restart: unless-stopped
-
-volumes:
-  pinger-data:
-    driver: local
+      - DATABASE_URL=file:./data/data.db
+      - ACCESS_USERNAME=${ACCESS_USERNAME:-}
+      - ACCESS_PASSWORD=${ACCESS_PASSWORD:-}
+    volumes:
+      # Persist SQLite database
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

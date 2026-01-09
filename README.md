@@ -2,111 +2,92 @@
 
 # Pinger
 
-A lightweight SvelteKit application that monitors URLs by periodically pinging them and tracking their response times and status codes in real-time.
+A lightweight, self-hosted URL monitoring tool. It periodically pings any URLs you add and records their HTTP status code and response latency. The dashboard automatically refreshes to show the latest results.
 
-## Features
+**Use cases:**
+- Keep serverless functions warm by hitting them periodically
+- Track response time trends for performance insights
 
-- **Automated Monitoring**: Pings all registered URLs every 5 seconds
-- **Response Tracking**: Records status codes and response times
-- **Real-time Updates**: Live dashboard with server-sent events
-- **SQLite Storage**: Persistent data using Prisma ORM
-- **Optional Auth**: HTTP Basic Authentication support
-- **Modern Stack**: Built with SvelteKit 2, Svelte 5 (runes), and Tailwind CSS 4
+**Stack:** SvelteKit 2, Svelte 5 (runes), Prisma 7, SQLite (via Better-SQLite3 adapter), Tailwind CSS 4
+
+<br/>
 
 ## Quick Start
 
-### Prerequisites
+1. Create `.env` file:
 
-- Node.js 18+ 
-- npm/pnpm/yarn
+```env
+DATABASE_URL="file:./data/data.db"
+```
 
-### Installation
+You can specify `ACCESS_USERNAME` and `ACCESS_PASSWORD` for optional HTTP Basic Authentication:
+
+```
+ACCESS_USERNAME="admin"
+ACCESS_PASSWORD="secret'
+```
+
+2. Install dependencies and start:
 
 ```sh
-# Install dependencies
 npm install
-
-# Initialize database
 npx prisma migrate dev
-
-# Start development server
 npm run dev
 ```
 
-Visit `http://localhost:5173` to access the application.
+Open http://localhost:5173
+
+<br/>
 
 ## Configuration
 
-### Environment Variables
+Adjust ping interval in `src/lib/config.ts`:
 
-Create a `.env` file in the project root (optional):
-
-```env
-# SQLite Database URL
-DATABASE_URL="file:./data.db"
-
-# Optional HTTP Basic Authentication
-ACCESS_USERNAME=admin
-ACCESS_PASSWORD=secret
+```typescript
+export const PING_INTERVAL = 15_000;
+export const REQUEST_TIMEOUT = 500;
 ```
 
-## Development
+<br/>
+
+## Commands
 
 ```sh
-npm run dev              # Start dev server
+npm run dev              # Development server
 npm run build            # Production build
-npm run preview          # Preview production build
-npm test                 # Run tests
-npx prisma studio        # Visual database browser
-npx prisma migrate dev   # Create database migrations
+npm start                # Run production build
+npm test                 # Tests
+npx prisma studio        # Database browser
+npx prisma migrate dev   # Create migrations
 ```
 
-## Docker Deployment
+<br/>
 
-### Quick Start with Docker Compose (Recommended)
+## Docker
 
-The easiest way to deploy with persistent storage:
+Docker Compose is the easiest way to run Pinger with persistent storage. The SQLite database is stored in `./data/data.db` on your host machine and survives container restarts.
+
+Create a `.env` file first (see Quick Start section), then:
 
 ```sh
-# Start the application
-docker-compose up -d
+# Start in background
+docker compose up -d
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
 
-# Stop the application
-docker-compose down
+# Stop
+docker compose down
 ```
 
-The SQLite database will be stored in `./data/pinger.db` on your host machine and will persist across container restarts and redeployments.
-
-Visit `http://localhost:3000` to access the application.
-
-### Docker Compose Configuration
-
-Enable HTTP Basic Authentication by editing `docker-compose.yml`:
-
-```yaml
-environment:
-  - ACCESS_USERNAME=admin
-  - ACCESS_PASSWORD=secret
-```
-
-Then restart: `docker-compose restart`
-
-### Manual Docker Commands
+For manual runs, bind-mount the data directory:
 
 ```sh
-# Build the Docker image
+# Build and run with data persistence
 docker build -t pinger .
-
-# Run with ephemeral database (data lost on container restart)
-docker run -p 3000:3000 pinger
-
-# Run with persistent database (recommended)
 docker run -p 3000:3000 -v $(pwd)/data:/app/data pinger
 
-# Run with authentication
+# With HTTP Basic Auth (recommended for public exposure)
 docker run -p 3000:3000 \
   -v $(pwd)/data:/app/data \
   -e ACCESS_USERNAME=admin \
@@ -114,19 +95,9 @@ docker run -p 3000:3000 \
   pinger
 ```
 
-### Volume Mounting
+> Enable auth in `docker-compose.yml` by uncommenting the environment variables, then run `docker compose restart`.
 
-The database file is stored at `/app/data/pinger.db` inside the container. To persist data across redeployments:
-
-- **Linux/macOS**: `-v $(pwd)/data:/app/data`
-- **Windows (PowerShell)**: `-v ${PWD}/data:/app/data`
-- **Windows (CMD)**: `-v %cd%/data:/app/data`
-
-The `data` directory on your host machine will contain:
-- `pinger.db` - SQLite database file
-- `pinger.db-journal` - SQLite journal file (temporary)
-
-These files will persist across container restarts, updates, and redeployments.
+<br/>
 
 ## License
 

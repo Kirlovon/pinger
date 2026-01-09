@@ -171,7 +171,5 @@
 			<UrlList {urls} onDelete={handleDeleteUrl} onCopy={handleCopyUrl} />
 			<UrlInput bind:value={newUrlInput} {errorMessage} {isLoading} onSubmit={handleAddUrl} />
 		</div>
-
-
 	</main>
 </div>

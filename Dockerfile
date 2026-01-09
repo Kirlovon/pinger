@@ -3,15 +3,8 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Build arguments for environment variables
-ARG DATABASE_URL="file:./data/data.db"
-ARG ACCESS_USERNAME=""
-ARG ACCESS_PASSWORD=""
-
-# Set as environment variables
-ENV DATABASE_URL=${DATABASE_URL}
-ENV ACCESS_USERNAME=${ACCESS_USERNAME}
-ENV ACCESS_PASSWORD=${ACCESS_PASSWORD}
+# Set build argument for database path
+ARG DATABASE_PATH="./data/data.db"
 
 # Copy package files
 COPY package*.json ./
@@ -23,6 +16,9 @@ RUN npm install
 # Copy source code
 COPY . .
 
+# Set DATABASE_URL for Prisma client generation
+ENV DATABASE_URL="file:${DATABASE_PATH}"
+
 # Run SvelteKit sync to generate .svelte-kit directory (required by Prisma)
 RUN npx svelte-kit sync
 
@@ -31,6 +27,8 @@ RUN npx prisma generate
 
 # Build the application
 RUN npm run build
+
+######################################################################
 
 # Production stage
 FROM node:22-alpine
@@ -48,14 +46,14 @@ COPY prisma.config.ts ./
 # Install production dependencies only
 RUN npm install --omit=dev
 
-# Generate Prisma client (migrations are applied at runtime via db:deploy)
-RUN npx prisma generate
-
 # Copy built application from builder
 COPY --from=builder /app/build ./build
 
 # Create directory for SQLite database
 RUN mkdir -p /app/data
+
+# Apply database migrations
+RUN npx prisma migrate deploy
 
 # Set environment variables
 ENV NODE_ENV=production
@@ -63,5 +61,5 @@ ENV NODE_ENV=production
 # Expose port (default SvelteKit port)
 EXPOSE 3000
 
-# Start the application (push schema then start)
-CMD ["sh", "-c", "npx prisma db push --skip-generate && node build/index.js"]
+# Apply migrations and start the application
+CMD ["npm", "run", "start"]
