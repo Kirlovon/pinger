@@ -34,7 +34,7 @@
 
 				<div class="flex items-center text-xs text-stone-400 absolute right-2 top-0 h-full opacity-0 translate-y-1 transition-all group-hover/url:translate-y-0 group-hover/url:opacity-100">
 					<button onclick={() => onCopy(url.id)} class="block transition-all hover:text-emerald-600 cursor-pointer active:scale-90 px-2">
-						<span class="text-xs">Copy</span>
+						<span class="text-xs">Copy URL</span>
 					</button>
 					<button onclick={() => onDelete(url.id)} class="block transition-all hover:text-red-600 cursor-pointer active:scale-90 px-2">
 						<span class="text-xs">Delete</span>

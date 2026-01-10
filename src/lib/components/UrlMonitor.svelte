@@ -161,7 +161,7 @@
 			<p class="max-w-[60ch]">This service will send GET requests to the specified URLs <i class="underline decoration-wavy underline-offset-6 font-medium">every {readableInterval}</i>.</p>
 
 			{#if urls?.length && intervalStatus}
-				<div class="absolute right-4 top-4" transition:scale>
+				<div class="absolute right-0 top-0" transition:scale>
 					<Clock intervalStatus={intervalStatus} />
 				</div>
 			{/if}
