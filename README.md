@@ -1,4 +1,7 @@
-![Pinger Preview](./assets/preview.webp)
+<p align="center">
+  <img src="./assets/preview.webp" alt="Pinger Preview" />
+</p>
+
 
 # Pinger
 A lightweight, self-hosted service for URL pinging that periodically pings any URLs you add and records their latest HTTP status code and response latency.
