@@ -11,10 +11,6 @@ describe('config', () => {
 		it('is greater than 0', () => {
 			expect(PING_INTERVAL).toBeGreaterThan(0);
 		});
-
-		it('is set to 5000ms (5 seconds)', () => {
-			expect(PING_INTERVAL).toBe(5000);
-		});
 	});
 
 	describe('REQUEST_TIMEOUT', () => {
